@@ -1,12 +1,13 @@
 import { CookieOptions, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { sign } from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import fsPromises from 'fs';
 import path from 'path';
 
 import dataApi from '../model/users.json';
 import { RegistrationUserDTO, User } from './RegisterController';
+import { IPayload } from '../middleware/verifyJWT';
 
 const maxAge = 24 * 60 * 60 * 1000;
 
@@ -38,15 +39,21 @@ export class AuthController {
     const match = await bcrypt.compare(pwd, foundUser.password);
 
     if (match) {
-      const accesToken = jwt.sign(
-        {
+      const roles = Object.values(foundUser.roles);
+      const payload = {
+        UserInfo: {
           username: foundUser.username,
+          roles,
         },
+      } as IPayload;
+
+      const accesToken = sign(
+        payload,
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: '30s' }
       );
 
-      const refreshToken = jwt.sign(
+      const refreshToken = sign(
         { username: foundUser.username },
         process.env.REFRESH_TOKEN_SECRET,
         { expiresIn: '1d' }

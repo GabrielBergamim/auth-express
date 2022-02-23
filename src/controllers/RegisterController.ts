@@ -14,6 +14,7 @@ export interface User {
   username: string;
   password: string;
   refreshToken?: string;
+  roles?: {[key: string]: number};
 }
 
 export class RegisterController {
@@ -47,7 +48,7 @@ export class RegisterController {
     try {
       const hashedPwd = await bcrypt.hash(pwd, 10);
 
-      const newUser: User = { username: user, password: hashedPwd };
+      const newUser: User = { username: user, password: hashedPwd, roles: {"User": 2001} };
 
       this.usersDB.setUsers([...this.usersDB.users, newUser]);
 

@@ -5,7 +5,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export interface IPayload {
-  username: string;
+  UserInfo: {
+    username: string;
+    roles: number[];
+  };
 }
 
 export function ensureAuthenticated(
@@ -13,21 +16,23 @@ export function ensureAuthenticated(
   res: Response,
   next: NextFunction
 ) {
-  const authHeader = req.headers['authorization'];
+  const authHeader = req.headers.authorization || req.headers.Authorization?.toString();
 
-  if (!authHeader) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return res.sendStatus(401);
   }
 
   const [, token] = authHeader.split(' ');
 
   try {
-    const { username } = verify(token, process.env.ACCESS_TOKEN_SECRET) as IPayload;
+    const {
+      UserInfo: { username, roles },
+    } = verify(token, process.env.ACCESS_TOKEN_SECRET) as IPayload;
 
     req.user = username;
-
+    req.roles = roles;
     return next();
   } catch (err) {
-    return res.status(403).json({ errorCode: "token.expired" });
+    return res.status(403).json({ errorCode: 'token.expired' });
   }
 }

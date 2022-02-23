@@ -19,8 +19,6 @@ export class RefreshTokenController {
   handleRefreshToken(req: Request, res: Response) {
     const { jwt: token = null } = req.cookies;
 
-    console.log(req.cookies);
-
     if (!token) {
       return res.sendStatus(401);
     }
@@ -34,24 +32,27 @@ export class RefreshTokenController {
     }
 
     try {
-      const { username } = verify(
-        token,
-        process.env.REFRESH_TOKEN_SECRET
-      ) as IPayload;
+      const {
+        UserInfo: { username },
+      } = verify(token, process.env.REFRESH_TOKEN_SECRET) as IPayload;
 
       if (username !== foundUser.username) {
         return res.sendStatus(403);
       }
 
-      const accesToken = sign(
-        {
+      const roles = Object.values(foundUser.roles);
+      const payload = {
+        UserInfo: {
           username: foundUser.username,
+          roles,
         },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: '30s' }
-      );
+      } as IPayload;
 
-      return res.json({accesToken});
+      const accesToken = sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '30s',
+      });
+
+      return res.json({ accesToken });
     } catch (err) {
       return res.status(403).json({ errorCode: 'token.expired' });
     }
