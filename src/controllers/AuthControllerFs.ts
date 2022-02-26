@@ -1,14 +1,23 @@
 import { CookieOptions, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
+import fsPromises from 'fs';
+import path from 'path';
 
-import { UserModel } from '../model/schemas/Users';
+import dataApi from '../model/users.json';
 import { RegistrationUserDTO, User } from './RegisterController';
 import { IPayload } from '../middleware/verifyJWT';
 
 const maxAge = 24 * 60 * 60 * 1000;
 
 export class AuthController {
+  data = {
+    users: dataApi as User[],
+    setUsers: function (data) {
+      this.users = data;
+    },
+  };
+
   async handleLogin(req: Request<{}, {}, RegistrationUserDTO>, res: Response) {
     const { user, pwd } = req.body;
 
@@ -18,9 +27,7 @@ export class AuthController {
         .json({ message: 'Username and password are required.' });
     }
 
-    const foundUser = (await UserModel.findOne({
-      username: user,
-    }).exec()) as User;
+    const foundUser = this.data.users.find(({ username }) => username === user);
 
     if (!foundUser) {
       return res.sendStatus(401);
@@ -47,9 +54,20 @@ export class AuthController {
         { expiresIn: '1d' }
       );
 
-      await UserModel.updateOne(
-        { username: foundUser.username },
-        { $set: { refreshToken } }
+      const otherUsers = this.data.users.filter(
+        ({ username }) => username !== user
+      );
+
+      const currentUser = { ...foundUser, refreshToken };
+
+      this.data.setUsers([...otherUsers, currentUser]);
+
+      fsPromises.writeFile(
+        path.join(__dirname, '..', 'model', 'users.json'),
+        JSON.stringify(this.data.users),
+        (err) => {
+          return res.sendStatus(500);
+        }
       );
 
       res.cookie('jwt', refreshToken, {
@@ -71,9 +89,9 @@ export class AuthController {
       return res.sendStatus(204);
     }
 
-    const foundUser = (await UserModel.findOne({
-      refreshToken: token,
-    }).exec()) as User;
+    const foundUser = this.data.users.find(
+      ({ refreshToken }) => refreshToken === token
+    );
 
     const optionsCokie = { httpOnly: true, sameSite: 'none' } as CookieOptions;
 
@@ -82,9 +100,19 @@ export class AuthController {
       return res.sendStatus(204);
     }
 
-    await UserModel.updateOne(
-      { username: foundUser.username },
-      { $set: { refreshToken: null } }
+    const otherUsers = this.data.users.filter(
+      ({ refreshToken }) => refreshToken !== token
+    );
+
+    const currentUser = { ...foundUser, refreshToken: '' };
+    this.data.setUsers([...otherUsers, currentUser]);
+
+    fsPromises.writeFile(
+      path.join(__dirname, '..', 'model', 'users.json'),
+      JSON.stringify(this.data.users),
+      (err) => {
+        return res.sendStatus(500);
+      }
     );
 
     res.clearCookie('jwt', optionsCokie);

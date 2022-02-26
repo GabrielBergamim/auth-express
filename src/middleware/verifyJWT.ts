@@ -1,8 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { verify } from 'jsonwebtoken';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 export interface IPayload {
   UserInfo: {
@@ -16,7 +13,8 @@ export function ensureAuthenticated(
   res: Response,
   next: NextFunction
 ) {
-  const authHeader = req.headers.authorization || req.headers.Authorization?.toString();
+  const authHeader =
+    req.headers.authorization || req.headers.Authorization?.toString();
 
   if (!authHeader?.startsWith('Bearer ')) {
     return res.sendStatus(401);

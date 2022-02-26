@@ -1,12 +1,9 @@
 import { Request, Response } from 'express';
 import { verify, sign } from 'jsonwebtoken';
-import dotenv from 'dotenv';
 
 import dataApi from '../model/users.json';
 import { User } from './RegisterController';
 import { IPayload } from '../middleware/verifyJWT';
-
-dotenv.config();
 
 export class RefreshTokenController {
   data = {

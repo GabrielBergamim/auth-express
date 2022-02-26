@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import cookieParser from 'cookie-parser';
+import { config } from 'dotenv';
 
 import { corsOptions } from './config/corsOptions';
 import { logger } from './middleware/logger';
@@ -11,12 +12,12 @@ import { routerEmployees } from './routers/employee';
 import { routerUsers } from './routers/users';
 import { routerAuth } from './routers/auth';
 
+config();
+
 const app = express();
 
 app.use(credentials);
-app.use(
-  cors(corsOptions)
-);
+app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
