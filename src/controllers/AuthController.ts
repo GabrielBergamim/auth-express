@@ -18,9 +18,9 @@ export class AuthController {
         .json({ message: 'Username and password are required.' });
     }
 
-    const foundUser = (await UserModel.findOne({
+    const foundUser = await UserModel.findOne({
       username: user,
-    }).exec()) as User;
+    }).exec();
 
     if (!foundUser) {
       return res.sendStatus(401);
@@ -30,6 +30,7 @@ export class AuthController {
 
     if (match) {
       const roles = Object.values(foundUser.roles);
+
       const payload = {
         UserInfo: {
           username: foundUser.username,
@@ -38,19 +39,17 @@ export class AuthController {
       } as IPayload;
 
       const accesToken = sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '30s',
+        expiresIn: '1h',
       });
 
       const refreshToken = sign(
-        { username: foundUser.username },
+        { UserInfo: { username: foundUser.username } },
         process.env.REFRESH_TOKEN_SECRET,
         { expiresIn: '1d' }
       );
 
-      await UserModel.updateOne(
-        { username: foundUser.username },
-        { $set: { refreshToken } }
-      );
+      foundUser.refreshToken = refreshToken;
+      await foundUser.save();
 
       res.cookie('jwt', refreshToken, {
         httpOnly: true,
@@ -71,9 +70,9 @@ export class AuthController {
       return res.sendStatus(204);
     }
 
-    const foundUser = (await UserModel.findOne({
+    const foundUser = await UserModel.findOne({
       refreshToken: token,
-    }).exec()) as User;
+    }).exec();
 
     const optionsCokie = { httpOnly: true, sameSite: 'none' } as CookieOptions;
 
@@ -82,10 +81,8 @@ export class AuthController {
       return res.sendStatus(204);
     }
 
-    await UserModel.updateOne(
-      { username: foundUser.username },
-      { $set: { refreshToken: null } }
-    );
+    foundUser.refreshToken = '';
+    await foundUser.save();
 
     res.clearCookie('jwt', optionsCokie);
     return res.sendStatus(204);

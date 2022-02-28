@@ -1,98 +1,104 @@
 import { Request, Response } from 'express';
 
-import dataApi from '../model/employees.json';
+import { EmployeeModel } from '../model/schemas/Employee';
+
+export interface Employee {
+  firstname: string;
+  lastname: string;
+}
 
 export class EmployeesController {
-  data = {
-    employees: dataApi,
-    setEmployees: function (data) {
-      this.employees = data;
-    },
-  };
+  async getAllEmployees(req: Request, res: Response) {
+    const employess = await EmployeeModel.find();
 
-  getAllEmployees(req: Request, res: Response) {
-    return res.json(dataApi);
+    if (!employess) {
+      return res.status(204).json({ message: 'No employees found.' });
+    }
+
+    return res.json(employess);
   }
 
-  getEmployee(req: Request, res: Response) {
-    const employee = this.data.employees.find(
-      (emp) => emp.id === parseInt(req.params.id)
-    );
+  async getEmployee(req: Request, res: Response) {
+    if (!req?.params?.id) {
+      return res.status(400).json({ message: `Employee ID is required.` });
+    }
+
+    const employee = await EmployeeModel.findOne({
+      _id: req.params.id,
+    }).exec();
 
     if (!employee) {
       return res
-        .status(400)
+        .status(204)
         .json({ message: `Employee ID ${req.params.id} not found` });
     }
 
     return res.json(employee);
   }
 
-  createEmployee(req: Request, res: Response) {
-    const newEmployee = {
-      id: this.data.employees?.length
-        ? this.data.employees[this.data.employees.length - 1].id + 1
-        : 1,
-      firstname: req.body.firstname,
-      lastname: req.body.lastname,
-    };
-
-    if (!newEmployee.firstname || !newEmployee.lastname) {
+  async createEmployee(req: Request<{}, {}, Employee>, res: Response) {
+    if (!req?.body?.firstname || !req?.body?.lastname) {
       return res
         .status(400)
         .json({ message: 'First and last names are required.' });
     }
 
-    this.data.setEmployees([...this.data.employees, newEmployee]);
-
-    return res.status(201).json(this.data.employees);
+    try {
+      const result = await EmployeeModel.create({
+        firstname: req.body.firstname,
+        lastname: req.body.lastname,
+      });
+      return res.status(201).json(result);
+    } catch (err) {
+      return res.sendStatus(500);
+    }
   }
 
-  updateEmployee(req: Request, res: Response) {
-    const employee = this.data.employees.find(
-      (emp) => emp.id === parseInt(req.body.id)
-    );
+  async updateEmployee(req: Request<{id: string}, {}, Employee>, res: Response) {
+    if (!req?.params?.id) {
+      return res.status(400).json({ message: `Employee ID is required.` });
+    }
+
+    const employee = await EmployeeModel.findOne({
+      _id: req.params.id,
+    }).exec();
 
     if (!employee) {
       return res
-        .status(400)
-        .json({ message: `Employee ID ${req.body.id} not found` });
+        .status(204)
+        .json({ message: `Employee ID ${req.params.id} not found.` });
     }
 
-    if (req.body.firstname) employee.firstname = req.body.firstname;
+    if (req.body?.firstname) {
+      employee.firstname = req.body.firstname;
+    } 
 
-    if (req.body.lastname) employee.lastname = req.body.lastname;
+    if (req.body?.lastname) {
+      employee.lastname = req.body.lastname;
+    }
 
-    const filteredArray = this.data.employees.filter(
-      (emp) => emp.id !== parseInt(req.body.id)
-    );
+    const result = employee.save();
 
-    const unsortedArray = [...filteredArray, employee];
-
-    this.data.setEmployees(
-      unsortedArray.sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
-    );
-
-    return res.json(this.data.employees);
+    return res.json(result);
   }
 
-  deleteEmployee(req: Request, res: Response) {
-    const employee = this.data.employees.find(
-      (emp) => emp.id === parseInt(req.body.id)
-    );
+  async deleteEmployee(req: Request, res: Response) {
+    if (!req?.params?.id) {
+      return res.status(400).json({ message: `Employee ID is required.` });
+    }
+
+    const employee = await EmployeeModel.findOne({
+      _id: req.params.id,
+    }).exec();
 
     if (!employee) {
       return res
-        .status(400)
-        .json({ message: `Employee ID ${req.body.id} not found` });
+        .status(204)
+        .json({ message: `Employee ID ${req.params.id} not found` });
     }
 
-    const filteredArray = this.data.employees.filter(
-      (emp) => emp.id !== parseInt(req.body.id)
-    );
+    employee.deleteOne({_id: req.params.id});
 
-    this.data.setEmployees([...filteredArray]);
-    
-    return res.json(this.data.employees);
+    return res.json({message: 'Employee deleted.'});
   }
 }

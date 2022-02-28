@@ -1,6 +1,8 @@
 import mongoose, { Schema } from 'mongoose';
 
-const userSchema = new Schema({
+import { User } from '../../controllers/RegisterController';
+
+const userSchema = new Schema<User>({
   username: { type: String, required: true },
   password: { type: String, required: true },
   roles: {
@@ -11,4 +13,4 @@ const userSchema = new Schema({
   refreshToken: { type: String },
 });
 
-export const UserModel = mongoose.model('User', userSchema);
+export const UserModel = mongoose.model<User>('User', userSchema);

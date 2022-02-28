@@ -1,8 +1,10 @@
 import mongoose, { Schema } from 'mongoose';
 
-const employeeSchema = new Schema({
+import { Employee } from '../../controllers/EmployeesController';
+
+const employeeSchema = new Schema<Employee>({
   firstname: { type: String, required: true },
   lastname: { type: String, required: true },
 });
 
-export const modelEmployee = mongoose.model('Employee', employeeSchema);
+export const EmployeeModel = mongoose.model<Employee>('Employee', employeeSchema);

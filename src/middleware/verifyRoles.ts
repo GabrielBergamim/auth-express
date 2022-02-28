@@ -10,6 +10,8 @@ export function verifyRoles(...allowedRoles: number[]) {
 
     const result = req.roles.map(role => rolesArray.includes(role)).find(val => val === true);
 
+    console.log(req.roles)
+
     if(!result) {
       return res.sendStatus(401);
     }

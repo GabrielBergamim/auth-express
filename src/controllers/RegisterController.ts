@@ -37,12 +37,10 @@ export class RegisterController {
     try {
       const hashedPwd = await bcrypt.hash(pwd, 10);
 
-      const newUser: User = await UserModel.create({
+      await UserModel.create({
         username: user,
         password: hashedPwd,
       });
-
-      console.log(newUser);
 
       return res.status(201).json({ message: `New user ${user} created!` });
     } catch (err) {

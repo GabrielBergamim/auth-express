@@ -1,20 +1,28 @@
 import { Request, Response } from 'express';
 import { verify, sign } from 'jsonwebtoken';
 
-import { UserModel } from '../model/schemas/Users';
+import dataApi from '../model/users.json';
+import { User } from './RegisterController';
 import { IPayload } from '../middleware/verifyJWT';
 
 export class RefreshTokenController {
-  async handleRefreshToken(req: Request, res: Response) {
-    const { jwt: refreshToken = null } = req.cookies;
+  data = {
+    users: dataApi as User[],
+    setUsers: function (data) {
+      this.users = data;
+    },
+  };
 
-    if (!refreshToken) {
+  handleRefreshToken(req: Request, res: Response) {
+    const { jwt: token = null } = req.cookies;
+
+    if (!token) {
       return res.sendStatus(401);
     }
 
-    const foundUser = await UserModel.findOne({
-      refreshToken,
-    }).exec();
+    const foundUser = this.data.users.find(
+      ({ refreshToken }) => refreshToken === token
+    );
 
     if (!foundUser) {
       return res.sendStatus(403);
@@ -23,14 +31,13 @@ export class RefreshTokenController {
     try {
       const {
         UserInfo: { username },
-      } = verify(refreshToken, process.env.REFRESH_TOKEN_SECRET) as IPayload;
+      } = verify(token, process.env.REFRESH_TOKEN_SECRET) as IPayload;
 
       if (username !== foundUser.username) {
         return res.sendStatus(403);
       }
 
       const roles = Object.values(foundUser.roles);
-
       const payload = {
         UserInfo: {
           username: foundUser.username,
@@ -39,7 +46,7 @@ export class RefreshTokenController {
       } as IPayload;
 
       const accesToken = sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '1d',
+        expiresIn: '30s',
       });
 
       return res.json({ accesToken });
