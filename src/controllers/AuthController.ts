@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 
 import { UserModel } from '../model/schemas/Users';
-import { RegistrationUserDTO, User } from './RegisterController';
+import { RegistrationUserDTO } from './RegisterController';
 import { IPayload } from '../middleware/verifyJWT';
 
 const maxAge = 24 * 60 * 60 * 1000;
@@ -29,7 +29,7 @@ export class AuthController {
     const match = await bcrypt.compare(pwd, foundUser.password);
 
     if (match) {
-      const roles = Object.values(foundUser.roles);
+      const roles = Object.values(foundUser.roles).filter(Boolean);
 
       const payload = {
         UserInfo: {
@@ -38,7 +38,7 @@ export class AuthController {
         },
       } as IPayload;
 
-      const accesToken = sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+      const accessToken = sign(payload, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: '1h',
       });
 
@@ -55,9 +55,10 @@ export class AuthController {
         httpOnly: true,
         maxAge,
         sameSite: 'none',
+        secure: true
       });
 
-      return res.json({ accesToken });
+      return res.json({ accessToken, roles });
     } else {
       return res.sendStatus(401);
     }

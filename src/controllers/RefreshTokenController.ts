@@ -38,11 +38,11 @@ export class RefreshTokenController {
         },
       } as IPayload;
 
-      const accesToken = sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+      const accessToken = sign(payload, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: '1d',
       });
 
-      return res.json({ accesToken });
+      return res.json({ accessToken });
     } catch (err) {
       return res.status(403).json({ errorCode: 'token.expired' });
     }
