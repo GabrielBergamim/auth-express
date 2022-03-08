@@ -47,4 +47,16 @@ export class RegisterController {
       return res.status(500).json({ message: err.message });
     }
   }
+
+  async handleGetUsers(
+    req: Request<{}, {}, RegistrationUserDTO>,
+    res: Response
+  ) {
+    try {
+      const users = await UserModel.find().exec();
+      return res.status(201).json(users);
+    } catch (err) {
+      return res.status(500).json({ message: err.message });
+    }
+  }
 }

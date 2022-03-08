@@ -5,6 +5,8 @@ const router = Router();
 
 const controller = new RegisterController();
 
-router.post('/', (req, res) => controller.handleNewUser(req, res));
+router.route('/')
+  .post((req, res) => controller.handleNewUser(req, res))
+  .get((req, res) => controller.handleGetUsers(req, res));
   
-export { router as routerUsers };
+export { router as routerRegister };

@@ -9,7 +9,8 @@ import { logger } from './middleware/logger';
 import { ensureAuthenticated } from './middleware/verifyJWT';
 import { credentials } from './middleware/credentials';
 import { routerEmployees } from './routers/employee';
-import { routerUsers } from './routers/users';
+import { routerRegister } from './routers/register';
+import { routerUsers } from './routers/user';
 import { routerAuth } from './routers/auth';
 
 config();
@@ -23,9 +24,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(logger);
 
-app.use('/register', routerUsers);
+app.use('/register', routerRegister);
 app.use('/auth', routerAuth);
 app.use(ensureAuthenticated);
+app.use('/users', routerUsers);
 app.use('/employees', routerEmployees);
 
 app.all('*', (req, res) => {
