@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { verify, sign } from 'jsonwebtoken';
-
-import { UserModel } from '../model/schemas/Users';
+import { sign, verify } from 'jsonwebtoken';
 import { IPayload } from '../middleware/verifyJWT';
+import { UserModel } from '../model/schemas/Users';
 
 export class RefreshTokenController {
   async handleRefreshToken(req: Request, res: Response) {
@@ -42,7 +41,7 @@ export class RefreshTokenController {
         expiresIn: '1d',
       });
 
-      return res.json({ accessToken });
+      return res.json({ accessToken, roles });
     } catch (err) {
       return res.status(403).json({ errorCode: 'token.expired' });
     }
