@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-
+import { Request, Response } from 'express';
 import { UserModel } from '../model/schemas/Users';
+
 
 export interface RegistrationUserDTO {
   user: string;
@@ -11,7 +11,7 @@ export interface RegistrationUserDTO {
 export interface User {
   username: string;
   password: string;
-  refreshToken?: string;
+  refreshToken?: string[];
   roles?: { [key: string]: number };
 }
 

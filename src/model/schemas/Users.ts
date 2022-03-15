@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
-
 import { User } from '../../controllers/RegisterController';
+
 
 const userSchema = new Schema<User>({
   username: { type: String, required: true },
@@ -10,7 +10,7 @@ const userSchema = new Schema<User>({
     Editor: Number,
     Admin: Number,
   },
-  refreshToken: { type: String },
+  refreshToken: [String],
 });
 
 export const UserModel = mongoose.model<User>('User', userSchema);

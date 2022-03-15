@@ -11,13 +11,30 @@ export class RefreshTokenController {
       return res.sendStatus(401);
     }
 
+    res.clearCookie('jwt', { httpOnly: true, sameSite: 'none' });
+
     const foundUser = await UserModel.findOne({
       refreshToken,
     }).exec();
 
     if (!foundUser) {
-      return res.sendStatus(403);
+      try {
+        const {
+          UserInfo: { username },
+        } = verify(refreshToken, process.env.REFRESH_TOKEN_SECRET) as IPayload;
+
+        const hackedUser = await UserModel.findOne({ username }).exec();
+        hackedUser.refreshToken = [];
+
+        await hackedUser.save();
+      } finally {
+        return res.sendStatus(403);
+      }
     }
+
+    const newRefreshTokenArray = foundUser.refreshToken.filter(
+      (rt) => rt !== refreshToken
+    );
 
     try {
       const {
@@ -38,11 +55,29 @@ export class RefreshTokenController {
       } as IPayload;
 
       const accessToken = sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '1d',
+        expiresIn: '10s',
+      });
+
+      const newRefreshToken = sign(
+        { UserInfo: { username: foundUser.username } },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: '1d' }
+      );
+
+      foundUser.refreshToken = [...newRefreshTokenArray, newRefreshToken];
+      await foundUser.save();
+
+      res.cookie('jwt', newRefreshToken, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'none',
+        secure: true
       });
 
       return res.json({ accessToken, roles });
     } catch (err) {
+      foundUser.refreshToken = [...newRefreshTokenArray];
+      await foundUser.save();
       return res.status(403).json({ errorCode: 'token.expired' });
     }
   }
